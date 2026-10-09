@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:," />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Mini 문제해결</title>
+  <style>
+    :root {
+      --bg: #f6f7f5;
+      --surface: #ffffff;
+      --surface-2: #eef0ed;
+      --ink: #161916;
+      --muted: #656b65;
+      --line: #daddd8;
+      --grid: #c9cdc7;
+      --accent: #86bc25;
+      --accent-deep: #4e7600;
+      --accent-soft: #eef7dc;
+      --ghost: #bcc1bb;
+      --shadow: 0 18px 50px rgba(24, 31, 20, .08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101210;
+        --surface: #191c19;
+        --surface-2: #252925;
+        --ink: #f2f4f0;
+        --muted: #aeb4ac;
+        --line: #353a34;
+        --grid: #646a62;
+        --accent: #9bcf35;
+        --accent-deep: #b9e66a;
+        --accent-soft: #263315;
+        --ghost: #747a72;
+        --shadow: 0 18px 50px rgba(0, 0, 0, .28);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--bg); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100svh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "IBM Plex Sans KR", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { font: inherit; }
+    .app {
+      width: min(100%, 920px);
+      min-height: 100vh;
+      min-height: 100svh;
+      margin: 0 auto;
+      padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+      display: grid;
+      align-items: center;
+    }
+    .quiz-view { width: min(100%, 620px); margin: auto; }
+    .app-title { margin: 0 2px 18px; font-size: clamp(28px, 5vw, 38px); line-height: 1; letter-spacing: -.045em; }
+    .topline { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 2px 14px; }
+    .counter { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .progress { flex: 1; max-width: 190px; height: 5px; background: var(--surface-2); overflow: hidden; }
+    .progress > span { display: block; height: 100%; width: 50%; background: var(--accent); transition: width .28s ease; }
+    .card {
+      min-height: 430px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      padding: clamp(28px, 7vw, 54px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .question-no { margin: 0 0 28px; color: var(--accent-deep); font-weight: 700; font-size: 13px; letter-spacing: .08em; }
+    .question { margin: 0; max-width: 460px; font-size: clamp(29px, 6vw, 42px); line-height: 1.27; letter-spacing: -.035em; word-break: keep-all; }
+    .hint { margin: 18px 0 0; color: var(--muted); font-size: 15px; line-height: 1.6; }
+    .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 48px; }
+    .choice {
+      min-height: 72px;
+      padding: 17px 18px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: border-color .18s ease, background .18s ease, color .18s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .choice:hover, .choice:focus-visible { border-color: var(--accent); background: var(--accent-soft); outline: none; }
+    .choice strong { font-size: 18px; }
+    .choice span { color: var(--muted); font-size: 14px; }
+    .choice:hover span, .choice:focus-visible span { color: var(--accent-deep); }
+
+    .result-view { width: 100%; margin: auto; }
+    .result-head { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 10px; }
+    .result-label { margin: 0 0 5px; color: var(--muted); font-size: 14px; }
+    .result-type { margin: 0; font-size: clamp(38px, 8vw, 64px); letter-spacing: -.045em; line-height: 1.02; word-break: keep-all; }
+    .result-type span { color: var(--accent); }
+    .result-comment { margin: 0 0 22px; max-width: 680px; color: var(--ink); font-size: clamp(16px, 2.5vw, 19px); font-weight: 500; line-height: 1.55; letter-spacing: -.015em; word-break: keep-all; }
+    .restart {
+      border: 0;
+      border-bottom: 1px solid var(--muted);
+      padding: 7px 0;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .restart:hover, .restart:focus-visible { color: var(--ink); border-color: var(--ink); outline: none; }
+    .chart-wrap { background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); padding: clamp(22px, 4vw, 36px); }
+    .quotes-title { margin: 0 0 14px; font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--accent-deep); }
+    .quotes { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .quotes li {
+      background: var(--surface-2);
+      border-left: 3px solid var(--accent);
+      padding: 13px 15px;
+      font-size: clamp(15px, 2.4vw, 17px);
+      line-height: 1.6;
+      letter-spacing: -.01em;
+      word-break: keep-all;
+    }
+    .result-actions { margin-top: 16px; display: flex; justify-content: flex-end; }
+    .shuffle {
+      border: 0;
+      border-bottom: 1px solid var(--muted);
+      padding: 7px 0;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+    .shuffle:hover, .shuffle:focus-visible { color: var(--ink); border-color: var(--ink); outline: none; }
+    .answer-strip { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .answer-chip { padding: 7px 10px; background: var(--surface-2); color: var(--muted); font-size: 12px; }
+    .answer-chip b { color: var(--accent-deep); }
+    .source-note { margin: 14px 2px 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .source-note a { color: inherit; text-underline-offset: 3px; }
+    .source-note a:hover, .source-note a:focus-visible { color: var(--ink); outline: none; }
+    .hidden { display: none !important; }
+
+    @media (max-width: 560px) {
+      .app { align-items: stretch; }
+      .quiz-view { display: flex; flex-direction: column; justify-content: center; }
+      .card { min-height: min(520px, calc(100svh - 110px)); padding: 30px 24px; }
+      .answers { grid-template-columns: 1fr; margin-top: 34px; }
+      .choice { min-height: 64px; }
+      .result-view { align-self: center; }
+      .result-head { align-items: center; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="quiz-view" id="quizView" aria-live="polite">
+      <h1 class="app-title" id="appTitle">Mini 문제해결</h1>
+      <div class="topline">
+        <div class="counter"><strong id="currentStep">1</strong> / <span id="totalSteps">2</span></div>
+        <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+      </div>
+      <article class="card">
+        <div>
+          <p class="question-no" id="questionNo">QUESTION 01</p>
+          <h1 class="question" id="questionText">문제가 있어?</h1>
+          <p class="hint" id="questionHint">지금 머릿속을 맴도는 걱정을 하나 떠올려보세요.</p>
+        </div>
+        <div class="answers">
+          <button class="choice" type="button" data-answer="yes"><strong id="yesText">네</strong><span>Yes</span></button>
+          <button class="choice" type="button" data-answer="no"><strong id="noText">아니요</strong><span>No</span></button>
+        </div>
+      </article>
+    </section>
+
+    <section class="result-view hidden" id="resultView" aria-live="polite">
+      <header class="result-head">
+        <div>
+          <p class="result-label" id="resultLabel">나의 Mini 문제해결</p>
+          <h1 class="result-type"><span id="resultHeadline">그럼 걱정 마.</span></h1>
+        </div>
+        <button class="restart" id="restartBtn" type="button">다시 하기</button>
+      </header>
+      <p class="result-comment" id="resultComment"></p>
+      <div class="chart-wrap">
+        <h2 class="quotes-title" id="quotesTitle">오늘의 한줄평 · 랜덤 3</h2>
+        <ul class="quotes" id="quotesList"></ul>
+        <div class="result-actions">
+          <button class="shuffle" id="shuffleBtn" type="button">한줄평 다시 뽑기</button>
+        </div>
+        <div class="answer-strip" id="answerStrip" aria-label="선택 결과"></div>
+      </div>
+      <p class="source-note" id="sourceNote"></p>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var REDDIT_URL = "https://www.reddit.com/r/pics/comments/gzwp7/this_is_quite_possibly_the_simplest_and_most_zen/";
+      var REDDIT_LABEL = "Reddit · The Simplest Zen Flowchart (r/pics)";
+
+      var I18N = {
+        ko: {
+          appTitle: "Mini 문제해결",
+          documentTitle: "Mini 문제해결",
+          resultLabel: "나의 Mini 문제해결",
+          quotesTitle: "오늘의 한줄평 · 랜덤 3",
+          shuffle: "한줄평 다시 뽑기",
+          restart: "다시 하기",
+          yes: "네",
+          no: "아니요",
+          questions: [
+            { text: "문제가 있어?", hint: "지금 머릿속을 맴도는 걱정을 하나 떠올려보세요." },
+            { text: "그걸 해결할 수 있어?", hint: "내 힘으로 어떻게든 할 수 있는 일인지 생각해보세요." }
+          ],
+          results: {
+            "no-problem": {
+              headline: "그럼 걱정 마.",
+              comment: "문제가 없는데 걱정할 이유가 없지.",
+              chips: ["문제 없음"]
+            },
+            "fixable": {
+              headline: "그럼 걱정 말고 해결해!",
+              comment: "할 수 있는 게 있으면, 걱정보다 행동이 빠르다.",
+              chips: ["문제 있음", "해결 가능"]
+            },
+            "unfixable": {
+              headline: "그럼 걱정 마.",
+              comment: "어쩔 수 없는 건 손에서 내려놓자.",
+              chips: ["문제 있음", "해결 불가"]
+            }
+          },
+          quotes: [
+            "걱정은 내일의 문제를 해결해주지 않는다. 오늘의 평화만 빼앗아갈 뿐이다.",
+            "걱정은 이자만 붙고 원금은 절대 안 줄어드는 빚이다.",
+            "걱정으로 해결된 문제는 역사상 단 하나도 없다. (아마도)",
+            "걱정은 마음의 스팸 메일이다. 읽지 말고 삭제하라.",
+            "내일 할 걱정을 오늘 미리 하지 마라. 내일의 너도 할 일이 필요하다.",
+            "어차피 결과는 같다면, 걱정 안 하는 쪽이 이득이다.",
+            "걱정은 가짜 문제에 대한 진짜 고통이다.",
+            "걱정할 시간에 심호흡 한 번, 물 한 잔.",
+            "문제가 없으면 걱정할 이유가 없고, 있으면 해결하면 된다. 둘 다 걱정할 자리가 없다.",
+            "걱정 마. 어차피 될 대로 된다 — 라고 믿는 순간 마음이 편해진다."
+          ],
+          source: "플로우차트 참고 · <a href=\"" + REDDIT_URL + "\" target=\"_blank\" rel=\"noopener noreferrer\">" + REDDIT_LABEL + "</a><br>플로우차트의 원본 출처를 아시면 제보해 주세요."
+        },
+        en: {
+          appTitle: "Mini Problem Solving",
+          documentTitle: "Mini Problem Solving",
+          resultLabel: "My Mini Problem Solving",
+          quotesTitle: "Today's one-liners · random 3",
+          shuffle: "Shuffle quotes",
+          restart: "Restart",
+          yes: "Yes",
+          no: "No",
+          questions: [
+            { text: "Do you have a problem?", hint: "Think of one worry that's been on your mind." },
+            { text: "Can you do something about it?", hint: "Ask yourself if it's something you can actually act on." }
+          ],
+          results: {
+            "no-problem": {
+              headline: "Then don't worry.",
+              comment: "No problem, no worry.",
+              chips: ["No problem"]
+            },
+            "fixable": {
+              headline: "Then don't worry — go fix it!",
+              comment: "If you can act on it, action beats worrying.",
+              chips: ["Have a problem", "Can fix it"]
+            },
+            "unfixable": {
+              headline: "Then don't worry.",
+              comment: "What you can't fix, let it go.",
+              chips: ["Have a problem", "Can't fix it"]
+            }
+          },
+          quotes: [
+            "Worrying doesn't empty tomorrow of its troubles. It empties today of its strength.",
+            "Worry is interest paid on trouble before it is due.",
+            "Worrying is like a rocking chair: it gives you something to do, but gets you nowhere.",
+            "Don't borrow tomorrow's worries today. Tomorrow-you needs something to do.",
+            "Worry is a down payment on a problem you may never have.",
+            "Overthinking: the art of creating problems that weren't even there.",
+            "Take a breath. Drink some water. The problem can wait five minutes.",
+            "No problem? No worry. Fixable problem? No worry. Unfixable problem? Still no worry.",
+            "If worrying fixed anything, we'd all be geniuses by now.",
+            "Relax. Everything will work out — and if it doesn't, worrying won't help either."
+          ],
+          source: "Flowchart reference · <a href=\"" + REDDIT_URL + "\" target=\"_blank\" rel=\"noopener noreferrer\">" + REDDIT_LABEL + "</a><br>Know the original source of this flowchart? Please let us know."
+        }
+      };
+
+      var locale = (navigator.language || "en").toLowerCase().indexOf("ko") === 0 ? "ko" : "en";
+      var T = I18N[locale];
+      document.documentElement.lang = locale;
+      document.title = T.documentTitle;
+
+      var step = 0;
+      var path = [];
+      var quizView = document.getElementById("quizView");
+      var resultView = document.getElementById("resultView");
+      var currentStep = document.getElementById("currentStep");
+      var progressBar = document.getElementById("progressBar");
+      var questionNo = document.getElementById("questionNo");
+      var questionText = document.getElementById("questionText");
+      var questionHint = document.getElementById("questionHint");
+
+      document.getElementById("appTitle").textContent = T.appTitle;
+      document.getElementById("resultLabel").textContent = T.resultLabel;
+      document.getElementById("quotesTitle").textContent = T.quotesTitle;
+      document.getElementById("shuffleBtn").textContent = T.shuffle;
+      document.getElementById("restartBtn").textContent = T.restart;
+      document.getElementById("yesText").textContent = T.yes;
+      document.getElementById("noText").textContent = T.no;
+      document.getElementById("sourceNote").innerHTML = T.source;
+
+      function renderQuestion() {
+        var q = T.questions[step];
+        currentStep.textContent = String(step + 1);
+        progressBar.style.width = ((step + 1) / 2 * 100) + "%";
+        questionNo.textContent = "QUESTION " + String(step + 1).padStart(2, "0");
+        questionText.textContent = q.text;
+        questionHint.textContent = q.hint;
+      }
+
+      function shuffled(arr) {
+        var copy = arr.slice();
+        for (var i = copy.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var tmp = copy[i];
+          copy[i] = copy[j];
+          copy[j] = tmp;
+        }
+        return copy;
+      }
+
+      function drawQuotes() {
+        var list = document.getElementById("quotesList");
+        list.innerHTML = "";
+        shuffled(T.quotes).slice(0, 3).forEach(function (quote) {
+          var li = document.createElement("li");
+          li.textContent = quote;
+          list.appendChild(li);
+        });
+      }
+
+      function showResult(key) {
+        var r = T.results[key];
+        document.getElementById("resultHeadline").textContent = r.headline;
+        document.getElementById("resultComment").textContent = r.comment;
+        var strip = document.getElementById("answerStrip");
+        strip.innerHTML = "";
+        r.chips.forEach(function (chip, index) {
+          var span = document.createElement("span");
+          span.className = "answer-chip";
+          span.innerHTML = (index + 1) + " · <b>" + chip + "</b>";
+          strip.appendChild(span);
+        });
+        drawQuotes();
+        quizView.classList.add("hidden");
+        resultView.classList.remove("hidden");
+        resultView.scrollIntoView({ block: "start" });
+      }
+
+      document.querySelectorAll(".choice").forEach(function (button) {
+        button.addEventListener("click", function () {
+          var answer = button.getAttribute("data-answer");
+          path.push(answer);
+          if (step === 0) {
+            if (answer === "yes") {
+              step = 1;
+              renderQuestion();
+            } else {
+              showResult("no-problem");
+            }
+          } else {
+            showResult(answer === "yes" ? "fixable" : "unfixable");
+          }
+        });
+      });
+
+      document.getElementById("shuffleBtn").addEventListener("click", function () {
+        drawQuotes();
+      });
+
+      document.getElementById("restartBtn").addEventListener("click", function () {
+        step = 0;
+        path = [];
+        resultView.classList.add("hidden");
+        quizView.classList.remove("hidden");
+        renderQuestion();
+      });
+
+      renderQuestion();
+    })();
+  </script>
+</body>
+</html>
